@@ -1,10 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Восстановление аккаунта</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            text-align: center; /* Центрируем контент */
+        }
+        h1 { color: var(--tg-theme-text-color); }
+        label { display: block; margin-top: 10px; margin-bottom: 5px; font-weight: bold; text-align: left; }
+        input[type="tel"], button {
+            width: 100%; max-width: 300px; /* Ограничиваем ширину для мобильных */
+            padding: 12px; margin-bottom: 20px; border-radius: 8px;
+            border: 1px solid var(--tg-theme-hint-color);
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            cursor: pointer;
+            font-size: 1.1em;
+            border: none;
+            transition: background-color 0.2s;
+        }
+        button:active {
+            filter: brightness(0.9);
+        }
+        #restore-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
+    <h1>💾 Восстановление аккаунта</h1>
+    <p>Введите <b><u>номер телефона</u></b>, который был привязан к старому аккаунту для переноса настроек.</p>
 
+    <form id="restore-form">
+
+        <label for="phone" style="max-width: 300px;">Номер телефона:</label>
+        <input type="tel" id="phone" placeholder="+..." required>
+
+        <button type="submit">Найти и восстановить</button>
+    </form>
+
+    <script>
+        const WebApp = window.Telegram.WebApp;
+        WebApp.ready();
+
+        // Устанавливаем основную кнопку Telegram для отправки
+        WebApp.MainButton.setText('Найти и восстановить');
+        WebApp.MainButton.show();
+
+        function sendRestoreData() {
+            const phoneNumber = document.getElementById('phone').value;
+            if (!phoneNumber) {
+                WebApp.showAlert('Пожалуйста, введите номер телефона.');
+                return;
+            }
+
+            const restoreData = {
+                action: "restore", // Ключ для хендлера бота
+                phone: phoneNumber
+            };
+
+            // Отправка JSON-данных обратно в Telegram Bot
+            WebApp.sendData(JSON.stringify(restoreData));
+        }
+
+        // Привязка отправки к кнопке формы и к Главной кнопке TWA
+        document.getElementById('restore-form').onsubmit = function(e) {
+            e.preventDefault();
+            sendRestoreData();
+        };
+
+        WebApp.MainButton.onClick(sendRestoreData);
+    </script>
 </body>
 </html>
