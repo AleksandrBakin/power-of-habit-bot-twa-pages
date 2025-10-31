@@ -53,54 +53,60 @@
                 <a href="https://drive.google.com/file/d/11mFImzeQd37ftmxtYOuctkQ6r-a1fAdw/view" target="_blank">политикой конфиденциальности</a>
                 и даю своё согласие на обработку персональных данных.</label>
         </div>
-        <button id="register"> ✅Зарегистрироваться </button>
     </form>
     <script>
-        let WebApp = window.Telegram.WebApp;
-        let reg = document.getElementById("register");
+        const WebApp = window.Telegram.WebApp;
         WebApp.ready();
-        WebApp.expand();
-
-        // --- ФУНКЦИЯ ПРЕДЗАПОЛНЕНИЯ ИМЕНИ ---
-        if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
-            let user = WebApp.initDataUnsafe.user;
-
-            // Чистый метод объединения (filter(Boolean) убирает null/undefined)
-            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
-
-            document.getElementById('user_name').value = fullName;
-        }
 
         // --- ФУНКЦИЯ ОПРЕДЕЛЕНИЯ ЧАСОВОГО ПОЯСА ---
         try {
-            let localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             document.getElementById('timezone').value = localTimezone || 'Etc/UTC';
         } catch (e) {
             document.getElementById('timezone').value = 'Etc/UTC';
         }
 
-        register.addEventListener("click", () => {
-            let user_name = document.getElementById("user_name").value;
-            let timezone = document.getElementById("timezone").value;
-            let reminder_time = document.getElementById("reminder_time").value;
+        // --- ФУНКЦИЯ ПРЕДЗАПОЛНЕНИЯ ИМЕНИ ---
+        if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
+            const user = WebApp.initDataUnsafe.user;
 
-            let form = document.getElementById('registration-form');
+            // Используем более чистый метод объединения (filter(Boolean) убирает null/undefined)
+            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+
+            document.getElementById('user_name').value = fullName;
+        }
+
+        // --- ФУНКЦИЯ ОТПРАВКИ ДАННЫХ ---
+        function sendDataFromForm() {
+            // Проверка, что все обязательные поля заполнены, прежде чем отправить
+            const form = document.getElementById('registration-form');
             if (!form.checkValidity()) {
+                // Если форма невалидна (например, не нажат чекбокс), браузер покажет стандартное предупреждение.
                 form.reportValidity();
                 return;
             }
 
-            let regData = {
+            const registrationData = {
                 action: "register",
-                name: user_name,
-                timezone: timezone,
-                reminder_time: reminder_time
+                name: document.getElementById('user_name').value,
+                timezone: document.getElementById('timezone').value,
+                reminder_time: document.getElementById('reminder_time').value
             };
-            WebApp.sendData(JSON.stringify(regData);
-            WebApp.close();
-        })
+            WebApp.sendData(JSON.stringify(registrationData));
+        }
 
-    };
+        // --- НАСТРОЙКА КНОПОК И ОБРАБОТЧИКОВ (ОДИН РАЗ) ---
+
+        // 1. Настройка Главной кнопки TWA
+        WebApp.MainButton.setText('Зарегистрироваться');
+        WebApp.MainButton.show();
+        WebApp.MainButton.onClick(sendDataFromForm); // Привязка к Главной кнопке
+
+        // 2. Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
+        document.getElementById('registration-form').onsubmit = function(e) {
+            e.preventDefault(); // Предотвращаем стандартную отправку формы
+            sendDataFromForm(); // Вызываем основную функцию отправки
+        };
     </script>
 </body>
 </html>
