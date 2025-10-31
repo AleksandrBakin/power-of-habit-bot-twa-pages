@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        h1 { color: var(--tg-theme-text-color); }
+        label { display: block; margin-top: 10px; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="tel"], input[type="time"], button {
+            width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px;
+            border: 1px solid var(--tg-theme-hint-color);
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            cursor: pointer;
+            font-size: 1.1em;
+            border: none;
+        }
+        #agreement-container { display: flex; align-items: center; margin-bottom: 20px; }
+        #agreement-container input[type="checkbox"] { width: auto; margin-right: 10px; }
+        #timezone { background-color: var(--tg-theme-hint-color); } /* Выделяем нередактируемое поле */
+    </style>
+</head>
+<body>
+    <h1>📝 Регистрация</h1>
+    <p>Для начала работы заполните данные и выберите удобное время для уведомлений.</p>
+
+    <form id="registration-form">
+
+        <label for="user-name">Ваше имя:</label>
+        <input type="text" id="user-name" placeholder="Имя" required>
+
+        <label for="phone">Номер телефона (для восстановления):</label>
+        <input type="tel" id="phone" placeholder="+7..." required>
+
+        <label for="timezone">Ваш часовой пояс (Определено автоматически):</label>
+        <input type="text" id="timezone" readonly required>
+
+        <label for="reminder-time">Утреннее время напоминания (Ваше локальное время):</label>
+        <input type="time" id="reminder-time" value="10:00" required>
+
+        <div id="agreement-container">
+            <input type="checkbox" id="agreement" required>
+            <label for="agreement">Я согласен с <a href="ВАШ_URL_СОГЛАШЕНИЯ" target="_blank">условиями пользовательского соглашения</a> и обработкой данных.</label>
+        </div>
+
+        <button type="submit">Завершить регистрацию</button>
+    </form>
+
+    <script>
+        const WebApp = window.Telegram.WebApp;
+        WebApp.ready();
+        try {
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('timezone').value = localTimezone || 'Etc/UTC';
+        } catch (e) {
+            document.getElementById('timezone').value = 'Etc/UTC'; // Fallback
+        }
+
+        // Предзаполнение имени из Telegram (если доступно)
+        if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
+            document.getElementById('user-name').value = WebApp.initDataUnsafe.user.first_name || '';
+        }
+
+        document.getElementById('registration-form').onsubmit = function(e) {
+            e.preventDefault();
+
+            const registrationData = {
+                action: "register",
+                name: document.getElementById('user-name').value,
+                phone: document.getElementById('phone').value,
+                timezone: document.getElementById('timezone').value,
+                reminder_time: document.getElementById('reminder-time').value
+            };
+            WebApp.sendData(JSON.stringify(registrationData));
+        };
+    </script>
+</body>
+</html>
