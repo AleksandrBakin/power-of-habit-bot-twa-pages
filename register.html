@@ -29,6 +29,7 @@
         #agreement-container input[type="checkbox"] { width: auto; margin-right: 10px; }
         #timezone { background-color: var(--tg-theme-hint-color); } /* Выделяем нередактируемое поле */
     </style>
+    <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
 </head>
 <body>
     <h1>📝 Регистрация</h1>
@@ -36,14 +37,14 @@
 
     <form id="registration-form">
 
-        <label for="user-name">Ваше имя:</label>
-        <input type="text" id="user-name" placeholder="Имя" required>
+        <label for="user_name">Ваше имя:</label>
+        <input type="text" id="user_name" placeholder="Имя" required>
 
-        <label for="timezone">Ваш часовой пояс (Определено автоматически):</label>
+        <label for="timezone">Ваш часовой пояс (Определяется автоматически):</label>
         <input type="text" id="timezone" readonly required>
 
-        <label for="reminder-time">Утреннее время напоминания (Ваше локальное время):</label>
-        <input type="time" id="reminder-time" value="10:00" required>
+        <label for="reminder_time">Утреннее время напоминания (По вашему часовому поясу):</label>
+        <input type="time" id="reminder_time" value="10:00" required>
 
         <div id="agreement-container">
             <input type="checkbox" id="agreement" required>
@@ -52,63 +53,53 @@
                 <a href="https://drive.google.com/file/d/11mFImzeQd37ftmxtYOuctkQ6r-a1fAdw/view" target="_blank">политикой конфиденциальности</a>
                 и даю своё согласие на обработку персональных данных.</label>
         </div>
-
+        <button id="register"> ✅Зарегистрироваться </button>
     </form>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        const WebApp = window.Telegram.WebApp;
+        let WebApp = window.Telegram.WebApp;
+        let reg = document.getElementById("register");
         WebApp.ready();
-
-        // --- ФУНКЦИЯ ОПРЕДЕЛЕНИЯ ЧАСОВОГО ПОЯСА ---
-        try {
-            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            document.getElementById('timezone').value = localTimezone || 'Etc/UTC';
-        } catch (e) {
-            document.getElementById('timezone').value = 'Etc/UTC'; // Fallback
-        }
+        WebApp.expand();
 
         // --- ФУНКЦИЯ ПРЕДЗАПОЛНЕНИЯ ИМЕНИ ---
         if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
-            const user = WebApp.initDataUnsafe.user;
+            let user = WebApp.initDataUnsafe.user;
 
-            // Используем более чистый метод объединения (filter(Boolean) убирает null/undefined)
+            // Чистый метод объединения (filter(Boolean) убирает null/undefined)
             const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
 
-            document.getElementById('user-name').value = fullName;
+            document.getElementById('user_name').value = fullName;
         }
 
-        // --- ФУНКЦИЯ ОТПРАВКИ ДАННЫХ ---
-        function sendDataFromForm() {
-            // Проверка, что все обязательные поля заполнены, прежде чем отправить
-            const form = document.getElementById('registration-form');
+        // --- ФУНКЦИЯ ОПРЕДЕЛЕНИЯ ЧАСОВОГО ПОЯСА ---
+        try {
+            let localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('timezone').value = localTimezone || 'Etc/UTC';
+        } catch (e) {
+            document.getElementById('timezone').value = 'Etc/UTC';
+        }
+
+        register.addEventListener("click", () => {
+            let user_name = document.getElementById("user_name").value;
+            let timezone = document.getElementById("timezone").value;
+            let reminder_time = document.getElementById("reminder_time").value;
+
+            let form = document.getElementById('registration-form');
             if (!form.checkValidity()) {
-                // Если форма невалидна (например, не нажат чекбокс),
-                // браузер покажет стандартное предупреждение.
                 form.reportValidity();
                 return;
             }
 
-            const registrationData = {
+            let regData = {
                 action: "register",
-                name: document.getElementById('user-name').value,
-                timezone: document.getElementById('timezone').value,
-                reminder_time: document.getElementById('reminder-time').value
+                name: user_name,
+                timezone: timezone,
+                reminder_time: reminder_time
             };
-            WebApp.sendData(JSON.stringify(registrationData));
-        }
+            WebApp.sendData(JSON.stringify(regData);
+            WebApp.close();
+        })
 
-        // --- НАСТРОЙКА КНОПОК И ОБРАБОТЧИКОВ (ОДИН РАЗ) ---
-
-        // 1. Настройка Главной кнопки TWA
-        WebApp.MainButton.setText('Зарегистрироваться');
-        WebApp.MainButton.show();
-        WebApp.MainButton.onClick(sendDataFromForm); // Привязка к Главной кнопке
-
-        // 2. Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
-        // 🛑 Здесь мы удалили дублирование!
-        document.getElementById('registration-form').onsubmit = function(e) {
-        e.preventDefault(); // Предотвращаем стандартную отправку формы
-        sendDataFromForm(); // Вызываем основную функцию отправки
     };
     </script>
 </body>
