@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
         h1 { color: var(--tg-theme-text-color); }
@@ -22,6 +21,9 @@
             cursor: pointer;
             font-size: 1.1em;
             border: none;
+        }
+        button:hover{
+            background: var(--tg-theme-secondary-bg-color);
         }
         #agreement-container { display: flex; align-items: center; margin-bottom: 20px; }
         #agreement-container input[type="checkbox"] { width: auto; margin-right: 10px; }
@@ -52,6 +54,7 @@
         </div>
 
     </form>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const WebApp = window.Telegram.WebApp;
         WebApp.ready();
@@ -107,6 +110,6 @@
         e.preventDefault(); // Предотвращаем стандартную отправку формы
         sendDataFromForm(); // Вызываем основную функцию отправки
     };
-</script>
+    </script>
 </body>
 </html>
