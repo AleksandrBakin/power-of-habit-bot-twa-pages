@@ -37,9 +37,6 @@
         <label for="user-name">Ваше имя:</label>
         <input type="text" id="user-name" placeholder="Имя" required>
 
-        <label for="phone">Номер телефона (для восстановления):</label>
-        <input type="tel" id="phone" placeholder="+..." required>
-
         <label for="timezone">Ваш часовой пояс (Определено автоматически):</label>
         <input type="text" id="timezone" readonly required>
 
@@ -69,7 +66,24 @@
 
         // Предзаполнение имени из Telegram (если доступно)
         if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
-            document.getElementById('user-name').value = WebApp.initDataUnsafe.user.first_name || '';
+            const user = WebApp.initDataUnsafe.user;
+            let fullName = '';
+
+            if (user.first_name) {
+                fullName += user.first_name;
+            }
+
+            // Добавляем фамилию, если она существует, с пробелом перед ней
+            if (user.last_name) {
+                // Проверяем, что имя уже есть, чтобы не получить пробел в начале
+                if (fullName.length > 0) {
+                    fullName += ' ';
+                }
+                fullName += user.last_name;
+            }
+
+            // Устанавливаем полное имя в поле
+            document.getElementById('user-name').value = fullName;
         }
 
         document.getElementById('registration-form').onsubmit = function(e) {
@@ -78,7 +92,6 @@
             const registrationData = {
                 action: "register",
                 name: document.getElementById('user-name').value,
-                phone: document.getElementById('phone').value,
                 timezone: document.getElementById('timezone').value,
                 reminder_time: document.getElementById('reminder-time').value
             };
