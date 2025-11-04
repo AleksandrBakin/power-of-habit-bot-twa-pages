@@ -186,7 +186,7 @@
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const phoneNumber = urlParams.get('phone_number');
-            document.getElementById('phone').value = phoneNumber || '+9876543210';
+            document.getElementById('phone').value = ("+" + phoneNumber) || '+9876543210';
         } catch (e) {
             document.getElementById('phone').value = '+1010101010';
         }

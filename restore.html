@@ -70,7 +70,7 @@
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const actualPhone = urlParams.get('act_phone');
-            document.getElementById('act_phone').value = actualPhone || '+9876543210';
+            document.getElementById('act_phone').value = ("+" + actualPhone) || '+9876543210';
         } catch (e) {
             document.getElementById('act_phone').value = '+1010101010';
         }
