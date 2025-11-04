@@ -75,18 +75,19 @@
             outline: none;
         }
 
-        /* Стиль для поля часового пояса (readonly) */
         input[readonly] {
-            opacity: 0.7; /* Делаем поле, которое нельзя редактировать, слегка тусклым */
+            background-color: var(--tg-theme-bg-color) !important;
+            border: 1px solid transparent;
+            color: var(--tg-theme-hint-color);
             cursor: default;
+            opacity: 0.5;
         }
 
-        /* ======================================= */
-        /* СТИЛИ КНОПКИ (Нужно добавить <button> в HTML!) */
-        /* ======================================= */
+        input[readonly]:focus {
+            border-color: transparent !important;
+            outline: none;
+        }
 
-        /* Мы должны добавить кнопку в HTML-файл для отправки формы:
-           <button type="submit">Начать работу</button> */
         button[type="submit"] {
             width: 100%;
             max-width: 300px;
@@ -107,11 +108,6 @@
         button[type="submit"]:active {
             filter: brightness(0.9);
         }
-
-
-        /* ======================================= */
-        /* СТИЛИ СОГЛАШЕНИЯ (#agreement-container) */
-        /* ======================================= */
 
         #agreement-container {
             display: flex;
@@ -137,7 +133,6 @@
             margin: 0;
         }
 
-        /* Стилизация ссылок */
         #agreement-container a {
             color: var(--tg-theme-link-color); /* Цвет ссылки Telegram */
             text-decoration: underline;
