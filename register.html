@@ -49,7 +49,8 @@
 
         /* 🛑 Стиль для всех полей ввода (text, time, readonly) */
         input[type="text"],
-        input[type="time"] {
+        input[type="time"],
+        input[type="tel"]{
 
             width: 100%;
             max-width: 300px;
@@ -68,7 +69,8 @@
 
         /* Выделение поля при фокусе */
         input[type="text"]:focus,
-        input[type="time"]:focus {
+        input[type="time"]:focus,
+        input[type="tel"]:focus {
             border-color: var(--tg-theme-link-color); /* Цвет ссылки при фокусе */
             outline: none;
         }
@@ -188,8 +190,6 @@
         } catch (e) {
             document.getElementById('phone').value = '+1010101010';
         }
-
-
 
         // --- ФУНКЦИЯ ПРЕДЗАПОЛНЕНИЯ ИМЕНИ ---
         if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {

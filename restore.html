@@ -52,8 +52,11 @@
 
     <form id="restore-form">
 
-        <label for="phone" style="max-width: 300px;">Номер телефона:</label>
+        <label for="phone" style="max-width: 300px;">Номер для поиска:</label>
         <input type="tel" id="phone" placeholder="+1234567890" required>
+
+        <label for="act_phone">Текущий номер:</label>
+        <input type="tel" id="act_phone" readonly required>
 
     </form>
 
@@ -61,20 +64,29 @@
         const WebApp = window.Telegram.WebApp;
         WebApp.ready();
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const actualPhone = urlParams.get('act_phone');
+
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const actualPhone = urlParams.get('act_phone');
+            document.getElementById('act_phone').value = actualPhone || '+9876543210';
+        } catch (e) {
+            document.getElementById('act_phone').value = '+1010101010';
+        }
+
         function sendRestoreData() {
-            const phoneNumber = document.getElementById('phone').value;
-            if (!phoneNumber) {
-                WebApp.showAlert('Пожалуйста, введите номер телефона.');
+            const form = document.getElementById('restore-form');
+            if (!form.checkValidity()) {
+                // Если форма невалидна (например, не нажат чекбокс), браузер покажет стандартное предупреждение.
+                form.reportValidity();
                 return;
             }
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const actualPhone = urlParams.get('act_phone');
-
             const restoreData = {
-                action: "restore",
-                old_phone: phoneNumber,
-                act_phone: actualPhone
+                action: 'restore',
+                old_phone: document.getElementById('phone').value,
+                act_phone: document.getElementById('act_phone').value
             };
 
             // Отправка JSON-данных обратно в Telegram Bot
@@ -84,15 +96,13 @@
         // Устанавливаем основную кнопку Telegram для отправки
         WebApp.MainButton.setText('Найти и восстановить');
         WebApp.MainButton.show();
-        WebApp.MainButton.onClick(sendDataFromForm); // Привязка к Главной кнопке
+        WebApp.MainButton.onClick(sendRestoreData); // Привязка к Главной кнопке
 
          // Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
         document.getElementById('restore-form').onsubmit = function(e) {
             e.preventDefault(); // Предотвращаем стандартную отправку формы
             sendRestoreData(); // Вызываем основную функцию отправки
         };
-
-        WebApp.MainButton.onClick(sendRestoreData);
     </script>
 </body>
 </html>
