@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Восстановление аккаунта</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -12,6 +11,10 @@
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
             text-align: center; /* Центрируем контент */
+        }
+        p {
+            width: 300px;
+            margin: 30px auto;
         }
         h1 { color: var(--tg-theme-text-color); }
         label { display: block; margin-top: 10px; margin-bottom: 5px; font-weight: bold; text-align: left; }
@@ -41,6 +44,7 @@
             align-items: center;
         }
     </style>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <h1>💾 Восстановление аккаунта</h1>
@@ -49,18 +53,13 @@
     <form id="restore-form">
 
         <label for="phone" style="max-width: 300px;">Номер телефона:</label>
-        <input type="tel" id="phone" placeholder="+..." required>
+        <input type="tel" id="phone" placeholder="+1234567890" required>
 
-        <button type="submit">Найти и восстановить</button>
     </form>
 
     <script>
         const WebApp = window.Telegram.WebApp;
         WebApp.ready();
-
-        // Устанавливаем основную кнопку Telegram для отправки
-        WebApp.MainButton.setText('Найти и восстановить');
-        WebApp.MainButton.show();
 
         function sendRestoreData() {
             const phoneNumber = document.getElementById('phone').value;
@@ -69,19 +68,28 @@
                 return;
             }
 
+            const urlParams = new URLSearchParams(window.location.search);
+            const actualPhone = urlParams.get('phone_number');
+
             const restoreData = {
-                action: "restore", // Ключ для хендлера бота
-                phone: phoneNumber
+                action: "restore",
+                old_phone: phoneNumber,
+                act_phone: actualPhone
             };
 
             // Отправка JSON-данных обратно в Telegram Bot
             WebApp.sendData(JSON.stringify(restoreData));
         }
 
-        // Привязка отправки к кнопке формы и к Главной кнопке TWA
+        // Устанавливаем основную кнопку Telegram для отправки
+        WebApp.MainButton.setText('Найти и восстановить');
+        WebApp.MainButton.show();
+        WebApp.MainButton.onClick(sendDataFromForm); // Привязка к Главной кнопке
+
+         // Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
         document.getElementById('restore-form').onsubmit = function(e) {
-            e.preventDefault();
-            sendRestoreData();
+            e.preventDefault(); // Предотвращаем стандартную отправку формы
+            sendRestoreData(); // Вызываем основную функцию отправки
         };
 
         WebApp.MainButton.onClick(sendRestoreData);
