@@ -170,6 +170,7 @@
                 <a href="https://drive.google.com/file/d/11mFImzeQd37ftmxtYOuctkQ6r-a1fAdw/view" target="_blank">политикой конфиденциальности</a>
                 и даю своё согласие на обработку персональных данных.</label>
         </div>
+        <button type="submit" style="display: none;"></button>
     </form>
     <script>
         const WebApp = window.Telegram.WebApp;
@@ -226,12 +227,12 @@
 
         // --- НАСТРОЙКА КНОПОК И ОБРАБОТЧИКОВ (ОДИН РАЗ) ---
 
-        // 1. Настройка Главной кнопки TWA
+        // Настройка Главной кнопки TWA
         WebApp.MainButton.setText('Зарегистрироваться');
         WebApp.MainButton.show();
         WebApp.MainButton.onClick(sendDataFromForm); // Привязка к Главной кнопке
 
-        // 2. Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
+        // Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
         document.getElementById('registration-form').onsubmit = function(e) {
             e.preventDefault(); // Предотвращаем стандартную отправку формы
             sendDataFromForm(); // Вызываем основную функцию отправки
