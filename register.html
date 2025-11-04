@@ -158,6 +158,9 @@
         <label for="reminder_time">Утреннее время напоминания (По вашему часовому поясу):</label>
         <input type="time" id="reminder_time" value="10:00" required>
 
+        <label for="phone">Номер телефона:</label>
+        <input type="tel" id="phone" readonly required>
+
         <div id="agreement-container">
             <input type="checkbox" id="agreement" required>
             <label for="agreement">Я согласен с
@@ -177,6 +180,16 @@
         } catch (e) {
             document.getElementById('timezone').value = 'Etc/UTC';
         }
+
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const phoneNumber = urlParams.get('phone_number');
+            document.getElementById('phone').value = phoneNumber || '+9876543210';
+        } catch (e) {
+            document.getElementById('phone').value = '+1010101010';
+        }
+
+
 
         // --- ФУНКЦИЯ ПРЕДЗАПОЛНЕНИЯ ИМЕНИ ---
         if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
@@ -201,15 +214,12 @@
                 return;
             }
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const phoneNumber = urlParams.get('act_phone');
-
             const registrationData = {
                 action: 'register',
                 name: document.getElementById('user_name').value,
                 timezone: document.getElementById('timezone').value,
                 reminder_time: document.getElementById('reminder_time').value,
-                phone_number: phoneNumber
+                phone_number: document.getElementById('phone').value
             };
             WebApp.sendData(JSON.stringify(registrationData));
         }
