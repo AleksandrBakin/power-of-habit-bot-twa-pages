@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
     <title>Регистрация</title>
     <style>
         body {
@@ -47,7 +48,6 @@
             font-size: 0.9em;
         }
 
-        /* 🛑 Стиль для всех полей ввода (text, time, readonly) */
         input[type="text"],
         input[type="time"],
         input[type="tel"]{
@@ -80,7 +80,7 @@
             border: 1px solid;
             color: var(--tg-theme-hint-color);
             cursor: default;
-            opacity: 0.6;
+            opacity: 0.7;
         }
 
         input[readonly]:focus {
@@ -136,8 +136,50 @@
             color: var(--tg-theme-link-color); /* Цвет ссылки Telegram */
             text-decoration: underline;
         }
+
+        #status-message {
+            max-width: 300px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            font-size: 0.95em;
+        }
+
+        #status-message.success {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: var(--tg-theme-text-color);
+        }
+
+        #status-message.error {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: var(--tg-theme-text-color);
+        }
+
+        #status-message.loading {
+            background-color: rgba(33, 150, 243, 0.2);
+            border: 1px solid rgba(33, 150, 243, 0.5);
+            color: var(--tg-theme-text-color);
+        }
+
+        #result-display {
+            max-width: 300px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: var(--tg-theme-secondary-bg-color);
+            border: 1px solid var(--tg-theme-hint-color);
+            display: none;
+            text-align: left;
+            font-size: 0.9em;
+            word-wrap: break-word;
+        }
     </style>
-    <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
 </head>
 <body>
     <h1>📝 Регистрация</h1>
@@ -160,12 +202,17 @@
         <div id="agreement-container">
             <input type="checkbox" id="agreement" required>
             <label for="agreement">Я согласен с
-                <a href="https://drive.google.com/file/d/1DyufgbxchKKQPRqsoXywGEX3vCwpfGPV/view" target="_blank">условиями пользовательского соглашения,</a>
-                <a href="https://drive.google.com/file/d/11mFImzeQd37ftmxtYOuctkQ6r-a1fAdw/view" target="_blank">политикой конфиденциальности</a>
+                <a href="https://drive.google.com/file/d/1DyufgbxchKKQPRqsoXywGEX3vCwpfGPV/view"
+                   target="_blank">условиями пользовательского соглашения,</a>
+                <a href="https://drive.google.com/file/d/11mFImzeQd37ftmxtYOuctkQ6r-a1fAdw/view"
+                   target="_blank">политикой конфиденциальности</a>
                 и даю своё согласие на обработку персональных данных.</label>
         </div>
-        <button type="submit" style="display: none;"></button>
+        <button type="submit" id="submit-btn" style="display: block; width: 100%; max-width: 300px; padding: 15px; margin-top: 25px; margin-bottom: 10px; border-radius: 8px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); cursor: pointer; font-size: 1.1em; border: none;">Зарегистрироваться</button>
     </form>
+
+    <div id="status-message"></div>
+    <div id="result-display"></div>
     <script>
         const WebApp = window.Telegram.WebApp;
         WebApp.ready();
@@ -199,15 +246,41 @@
             const photoUrl = WebApp.initDataUnsafe.user.photo_url
         }
 
+        // --- ФУНКЦИИ ОТОБРАЖЕНИЯ СТАТУСА ---
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            statusEl.className = type;
+            statusEl.style.display = 'block';
+        }
+
+        function hideStatus() {
+            const statusEl = document.getElementById('status-message');
+            statusEl.style.display = 'none';
+        }
+
+        function showResult(data) {
+            const resultEl = document.getElementById('result-display');
+            resultEl.innerHTML = '<strong>Ответ от сервера:</strong><br><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            resultEl.style.display = 'block';
+        }
+
+        function hideResult() {
+            const resultEl = document.getElementById('result-display');
+            resultEl.style.display = 'none';
+        }
+
         // --- ФУНКЦИЯ ОТПРАВКИ ДАННЫХ ---
         function sendDataFromForm() {
-            // Проверка, что все обязательные поля заполнены, прежде чем отправить
             const form = document.getElementById('registration-form');
             if (!form.checkValidity()) {
-                // Если форма невалидна (например, не нажат чекбокс), браузер покажет стандартное предупреждение.
                 form.reportValidity();
                 return;
             }
+
+            // Скрываем предыдущие результаты
+            hideStatus();
+            hideResult();
 
             const registrationData = {
                 action: 'register',
@@ -216,20 +289,83 @@
                 reminder_time: document.getElementById('reminder_time').value,
                 phone_number: document.getElementById('phone').value
             };
-            WebApp.sendData(JSON.stringify(registrationData));
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiBase = urlParams.get('api') || 'http://127.0.0.1:8003';
+
+            // Получаем tg_id из WebApp.initDataUnsafe.user.id
+            const tgUser = WebApp.initDataUnsafe && WebApp.initDataUnsafe.user ? WebApp.initDataUnsafe.user : null;
+            const tgId = tgUser && tgUser.id ? tgUser.id : null;
+            if (!tgId) {
+                showStatus('❌ Ошибка: не удалось определить ваш Telegram ID. Откройте страницу из бота.', 'error');
+                WebApp.showAlert('Ошибка: не удалось определить ваш Telegram ID. Откройте страницу из бота.');
+                return;
+            }
+
+            const payload = {
+                tg_id: tgId,
+                name: registrationData.name,
+                phone_number: registrationData.phone_number,
+                time_zone: registrationData.timezone,
+                morning_reminder_time: registrationData.reminder_time,
+                personal_data_use_agreement_time: new Date().toISOString()
+            };
+
+            // Показываем статус загрузки
+            showStatus('⏳ Отправка данных на сервер...', 'loading');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправка...';
+
+            fetch(`${apiBase}/api/users/${tgId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async (res) => {
+                let responseData;
+                try {
+                    responseData = await res.json();
+                } catch (e) {
+                    const text = await res.text();
+                    responseData = { detail: text };
+                }
+                
+                if (res.ok) {
+                    showStatus('✅ Регистрация прошла успешно! Закройте это окно и нажмите кнопку "✅ Готово" в боте.', 'success');
+                    showResult(responseData);
+                    WebApp.showAlert('🎉 Регистрация прошла успешно! Закройте это окно и нажмите кнопку "✅ Готово" в боте.');
+                    submitBtn.textContent = '✅ Зарегистрировано!';
+                    submitBtn.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
+                    submitBtn.disabled = true;
+                } else {
+                    const errorMsg = responseData.detail || responseData.message || 'Неизвестная ошибка';
+                    showStatus('❌ Ошибка регистрации: ' + errorMsg, 'error');
+                    showResult(responseData);
+                    WebApp.showAlert('Ошибка регистрации: ' + errorMsg);
+                    submitBtn.textContent = 'Зарегистрироваться';
+                    submitBtn.disabled = false;
+                }
+            }).catch((e) => {
+                const errorMsg = 'Сетевая ошибка: ' + e.message;
+                showStatus('❌ ' + errorMsg, 'error');
+                showResult({ error: e.message, stack: e.stack });
+                WebApp.showAlert(errorMsg);
+                submitBtn.textContent = 'Зарегистрироваться';
+                submitBtn.disabled = false;
+            });
         }
 
         // --- НАСТРОЙКА КНОПОК И ОБРАБОТЧИКОВ (ОДИН РАЗ) ---
 
-        // Настройка Главной кнопки TWA
-        WebApp.MainButton.setText('Зарегистрироваться');
-        WebApp.MainButton.show();
-        WebApp.MainButton.onClick(sendDataFromForm); // Привязка к Главной кнопке
-
-        // Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
+        // Привязка к событию SUBMIT формы HTML
         document.getElementById('registration-form').onsubmit = function(e) {
             e.preventDefault(); // Предотвращаем стандартную отправку формы
             sendDataFromForm(); // Вызываем основную функцию отправки
+        };
+
+        // Привязка к кнопке
+        document.getElementById('submit-btn').onclick = function(e) {
+            e.preventDefault();
+            sendDataFromForm();
         };
     </script>
 </body>

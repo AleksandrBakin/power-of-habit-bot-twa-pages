@@ -48,11 +48,54 @@
             border: 1px solid;
             color: var(--tg-theme-hint-color);
             cursor: default;
-            opacity: 0.6;
+            opacity: 0.7;
         }
 
         input[readonly]:focus {
             outline: none;
+        }
+
+        #status-message {
+            max-width: 300px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            font-size: 0.95em;
+        }
+
+        #status-message.success {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: var(--tg-theme-text-color);
+        }
+
+        #status-message.error {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: var(--tg-theme-text-color);
+        }
+
+        #status-message.loading {
+            background-color: rgba(33, 150, 243, 0.2);
+            border: 1px solid rgba(33, 150, 243, 0.5);
+            color: var(--tg-theme-text-color);
+        }
+
+        #result-display {
+            max-width: 300px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: var(--tg-theme-secondary-bg-color);
+            border: 1px solid var(--tg-theme-hint-color);
+            display: none;
+            text-align: left;
+            font-size: 0.9em;
+            word-wrap: break-word;
         }
     </style>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -68,8 +111,11 @@
 
         <label for="act_phone">Текущий номер:</label>
         <input type="tel" id="act_phone" readonly required>
-        <button type="submit" style="display: none;"></button>
+        <button type="submit" id="submit-btn" style="display: block; width: 100%; max-width: 300px; padding: 15px; margin-top: 25px; margin-bottom: 10px; border-radius: 8px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); cursor: pointer; font-size: 1.1em; border: none;">Найти и восстановить</button>
     </form>
+
+    <div id="status-message"></div>
+    <div id="result-display"></div>
 
     <script>
         const WebApp = window.Telegram.WebApp;
@@ -86,33 +132,118 @@
             document.getElementById('act_phone').value = '+1010101010';
         }
 
+        // --- ФУНКЦИИ ОТОБРАЖЕНИЯ СТАТУСА ---
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            statusEl.className = type;
+            statusEl.style.display = 'block';
+        }
+
+        function hideStatus() {
+            const statusEl = document.getElementById('status-message');
+            statusEl.style.display = 'none';
+        }
+
+        function showResult(data) {
+            const resultEl = document.getElementById('result-display');
+            resultEl.innerHTML = '<strong>Ответ от сервера:</strong><br><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            resultEl.style.display = 'block';
+        }
+
+        function hideResult() {
+            const resultEl = document.getElementById('result-display');
+            resultEl.style.display = 'none';
+        }
+
         function sendRestoreData() {
             const form = document.getElementById('restore-form');
             if (!form.checkValidity()) {
-                // Если форма невалидна (например, не нажат чекбокс), браузер покажет стандартное предупреждение.
                 form.reportValidity();
                 return;
             }
+
+            // Скрываем предыдущие результаты
+            hideStatus();
+            hideResult();
 
             const restoreData = {
                 action: 'restore',
                 old_phone: document.getElementById('phone').value,
                 act_phone: document.getElementById('act_phone').value
             };
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiBase = urlParams.get('api') || 'http://127.0.0.1:8003';
 
-            // Отправка JSON-данных обратно в Telegram Bot
-            WebApp.sendData(JSON.stringify(restoreData));
+            // Получаем tg_id из WebApp.initDataUnsafe.user.id
+            const tgUser = WebApp.initDataUnsafe && WebApp.initDataUnsafe.user ? WebApp.initDataUnsafe.user : null;
+            const tgId = tgUser && tgUser.id ? tgUser.id : null;
+            if (!tgId) {
+                showStatus('❌ Ошибка: не удалось определить ваш Telegram ID. Откройте страницу из бота.', 'error');
+                WebApp.showAlert('Ошибка: не удалось определить ваш Telegram ID. Откройте страницу из бота.');
+                return;
+            }
+
+            const payload = {
+                tg_id: tgId,
+                old_phone: restoreData.old_phone,
+                act_phone: restoreData.act_phone
+            };
+
+            // Показываем статус загрузки
+            showStatus('⏳ Поиск аккаунта и восстановление...', 'loading');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Поиск...';
+
+            fetch(`${apiBase}/api/restore`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async (res) => {
+                let responseData;
+                try {
+                    responseData = await res.json();
+                } catch (e) {
+                    const text = await res.text();
+                    responseData = { detail: text };
+                }
+                
+                if (res.ok) {
+                    showStatus('✅ Аккаунт восстановлен! Закройте это окно и нажмите кнопку "✅ Готово" в боте.', 'success');
+                    showResult(responseData);
+                    WebApp.showAlert('🎉 Аккаунт восстановлен! Закройте это окно и нажмите кнопку "✅ Готово" в боте.');
+                    submitBtn.textContent = '✅ Восстановлено!';
+                    submitBtn.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
+                    submitBtn.disabled = true;
+                } else {
+                    const errorMsg = responseData.detail || responseData.message || 'Неизвестная ошибка';
+                    showStatus('❌ Ошибка восстановления: ' + errorMsg, 'error');
+                    showResult(responseData);
+                    WebApp.showAlert('Ошибка восстановления: ' + errorMsg);
+                    submitBtn.textContent = 'Найти и восстановить';
+                    submitBtn.disabled = false;
+                }
+            }).catch((e) => {
+                const errorMsg = 'Сетевая ошибка: ' + e.message;
+                showStatus('❌ ' + errorMsg, 'error');
+                showResult({ error: e.message, stack: e.stack });
+                WebApp.showAlert(errorMsg);
+                submitBtn.textContent = 'Найти и восстановить';
+                submitBtn.disabled = false;
+            });
         }
 
-        // Устанавливаем основную кнопку Telegram для отправки
-        WebApp.MainButton.setText('Найти и восстановить');
-        WebApp.MainButton.show();
-        WebApp.MainButton.onClick(sendRestoreData); // Привязка к Главной кнопке
-
-         // Привязка к событию SUBMIT формы HTML (на случай Enter или иного действия)
+        // Привязка к событию SUBMIT формы HTML
         document.getElementById('restore-form').onsubmit = function(e) {
-            e.preventDefault(); // Предотвращаем стандартную отправку формы
-            sendRestoreData(); // Вызываем основную функцию отправки
+            e.preventDefault();
+            sendRestoreData();
+        };
+
+        // Привязка к кнопке
+        document.getElementById('submit-btn').onclick = function(e) {
+            e.preventDefault();
+            sendRestoreData();
         };
     </script>
 </body>
